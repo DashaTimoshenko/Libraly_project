@@ -1,0 +1,74 @@
+registration
+{
+"user_login":"",
+"user_password":"",
+"user_name":"",
+"surname":"",
+"middle_name":"",
+"role_name":"", ?
+}
+response
+{
+    "response":"додати причину, якщо вона є",
+}
+enter
+post
+{
+"user_login":"",
+"user_password":"",
+}
+get
+{
+"entrence": "true", 
+"role_name": "",
+"user_id": "",
+}
+fail response for get
+{
+"entrence": "false", 
+}
+search
+post
+{
+"input":"text of input"
+}
+get books
+{
+pagination: 2, //кількість сторінок
+"books": [{
+"book_title":"",
+"author":"",
+"genre":"",
+"book_id":"",
+"description":"?",
+}, ...]
+}
+pagination
+{
+    "pageIndex": 
+}
+reservation of book
+{
+"user_id":"",
+"book_id":"",
+}
+add book
+{
+"author_name":"",
+"author_surname":"",
+"author_middle_name":"",
+"book_title":"",
+"genre":"",
+"edition_id":"",
+"description":"?",
+}
+delete book
+{
+"edition_id":"",
+}
+return book
+{
+"order_id":"",
+"edition_id":"",
+"user_id":""
+}
