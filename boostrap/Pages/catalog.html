@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Католог</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+          <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid"> <div class="navbar-brand">Book Catalog</div> <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"> <span class="navbar-toggler-icon"></span> </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto mb-3 mb-lg-0">
+            </ul>
+           
+          </div>
+    </div>
+    <div class="d-flex flex-row uk-navbar-right" id = "login_icon"></div>
+</nav>
+<div class="d-flex justify-content-center">
+  <div class="col-md-2">
+  <select class="form-select" id = "options" aria-label="Default select example">
+    <option value="Оберіть тип пошуку" selected>Виберіть умови пошуку</option>
+    <option value="{{url_for('find_by_title')}}">Назва</option>
+    <option value="{{url_for('find_by_genre')}}">Жанр</option>
+    <option value="{{url_for('find_by_author')}}">Автор</option>
+    <option value="{{url_for('find_by_year')}}">Рік</option>
+  </select>
+  </div>
+  <form  class="d-flex" onsubmit="return false;" > <input class="form-control mr-3"  placeholder="Search" type="search" minlength = "1" aria-label="Search">
+    <button class="btn btn-outline-success" onclick="search(event)">Search</button> </form>
+</div>
+    <div class="album py-5 bg-light">
+        <div class="container">
+
+          <div class="row" id = "blocks">
+          </div>
+          <nav aria-label="Page navigation example">
+            <ul class="pagination" id = 'pages'>
+            </ul>
+          </nav>
+        </div>
+      </div>
+ <script src = "{{url_for('navbarCretionScript')}}"></script>
+<script>
+  const getBooks = async () => {
+    const row = document.getElementById('blocks');
+    const pagination = document.getElementById('pages');
+
+    const books = await fetch("{{url_for('take_books_data')}}", {method: 'GET'})
+	  .then(response => {
+      if (response.status !== 200) {
+        alert(`Виникла проблема. Статус код: ${response.status}`);
+        return;
+      }
+      return response.json()})
+      .then(data => {
+     let i = data.pagination;
+       while(i > 0){
+          pagination.insertAdjacentHTML("afterbegin",`<li class="page-item"><a class="page-link" onclick = "getPagination('${i}')">${i}</a></li>`);
+        i-=1;
+      }
+
+      data.books.slice(0,6).forEach((book,index) => {
+        row.append(createCard(book,index));
+      });
+      return data.books;
+    });
+
+    return books;
+  };
+
+  const getPagination = (number) => {
+    GLOBAL_books.then(books =>  {
+      const row = document.getElementById('blocks');
+
+      const books_part = books.slice((number-1)*6,(number-1)*6+6);
+      while (row.firstChild) {
+        row.removeChild(row.firstChild);
+       }
+       books_part.forEach((book,index) => {
+        row.append(createCard(book,index));
+      });
+    });
+   
+  };
+
+const createCard = (book, index) => {
+  let div = document.createElement('div');
+      div.className = "col-md-4";
+      div.innerHTML =  `
+    <div class="card mb-4 box-shadow" id = ${'book'+index}>
+       <div class="card-body">
+        <p class="card-text">Назва книги</p>
+          <p class="card-text">${book.book_title}</p>
+          <p class="card-text">Автор</p>
+          <p class="card-text">${book.authors}</p>
+          <p class="card-text">Кількість доступних книг</p>
+          <p class="card-text">${book.number_of_available}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-outline-primary" >ADD</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary">INFO</button>
+              </div>
+            </div>
+        </div>
+    </div>
+  `;
+  const functions = [addBook,getInfo];
+    div.querySelectorAll('button').forEach((button,index) => {
+      button.addEventListener("click", () => functions[index](button,book));
+    });
+
+    return div;
+};
+
+const getInfo = (event, data) =>{
+  if(event){
+    const card = event.parentNode.parentNode;
+    event.parentNode.removeChild(event);
+ 
+    card.insertAdjacentHTML('beforebegin', `<p class="card-text">Жанр</p>
+                                            <p class="card-text">${data.genres}</p>
+                                            <p class="card-text">Рік</p>
+                                            <p class="card-text">${data.year}</p>`);
+  }
+};
+
+const clearCatalogue = (row) => {
+  while (row.firstChild) {
+        row.removeChild(row.firstChild);
+  }
+  console.log(row.children);
+};
+
+  const search = async (form) => {
+    const url = document.getElementById('options').value;
+    const input = document.querySelector('input').value;
+    const row = document.getElementById('blocks');
+    const pagination = document.getElementById('pages');
+    if (url === "Оберіть тип пошуку"){
+      alert(url);
+
+      return;
+    }
+    
+    if(input === '') {
+      console.log(input);
+      clearCatalogue(row);
+      clearCatalogue(pagination);
+      getBooks();
+      
+      return;
+    }
+
+
+    await fetch(url, {method: 'POST', body: JSON.stringify({input})})
+	  .then(response => {
+    if (response.status !== 200) {
+          alert(`Виникла проблема. Статус код: ${response.status}`);
+          return;
+        }
+    return response.json()})
+    .then(data => {
+      if (data.books.length !== 0){
+        clearCatalogue(row);
+        data.books.forEach((book,index) => {
+        row.append(createCard(book,index));
+    });
+      } else {
+        alert('У базі немає книжок');
+      }
+    });
+
+    clearCatalogue(pagination);
+    return false;
+  };
+
+const addBook = async (event, book) => {
+  if(book.number_of_available <= 0) {
+    alert('Книги немає у наявності');
+
+    return;
+  }
+  await fetch("{{url_for('add_book_to_basket')}}", {
+    method: 'PUT',
+    body: JSON.stringify({edition_id : book.edition_id}),
+  })
+	.then(response => {
+    if (response.status !== 200) {
+      alert(`Виникла помилка статус код: ${response.status}`);
+      return;
+    }
+
+    return response.json()
+  }).then(data => {
+      alert(JSON.parse(JSON.stringify(data)).response);
+  });
+};
+
+const getUserRole = async () => {
+  await fetch("{{url_for('getUserRole')}}", {method: 'GET'})
+	.then(response => {
+    if (response.status !== 200) {
+      alert(`Виникла помилка статус код: ${response.status}`);
+      return;
+    }
+
+    return response.json()
+  }).then(data => {
+    sessionStorage.setItem('permissions', data.permissions);
+    sessionStorage.setItem('status',data.role);
+    sessionStorage.setItem('logged',data.logged);
+    createNavbar();
+    });
+  };
+
+getUserRole();
+const GLOBAL_books = getBooks();
+</script>
+
+</body>
+</html>
